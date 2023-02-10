@@ -1,18 +1,4 @@
-ARG UPSTREAM_TAG=latest
-FROM docker.io/tootsuite/mastodon:${UPSTREAM_TAG}
-
-USER root
-
-RUN set -e; \
-    export DEBIAN_FRONTEND=noninteractive; \
-    apt-get update; \
-    mkdir -p /var/cache/apt/archives/partial; \
-    apt-get -y --no-install-recommends install \
-        rclone; \
-    rm -rf /var/cache; \
-    rm -rf /var/lib/apt/lists/*
-
-USER mastodon
+FROM docker.io/tootsuite/mastodon:v4.0.2
 
 COPY --chown=mastodon:mastodon app /opt/mastodon/app
 COPY --chown=mastodon:mastodon config /opt/mastodon/config
