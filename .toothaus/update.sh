@@ -2,34 +2,18 @@
 set -euo pipefail
 
 UPSTREAM_REMOTE='upstream'
-UPSTREAM_BRANCH='main'
 UPSTREAM_REPO='https://github.com/mastodon/mastodon.git'
-LOCAL_REMOTE='origin'
-LOCAL_BRANCH='toothaus'
+LOCAL_BRANCH_PREFIX='toothaus-'
 
 if ! git remote -v | grep -c upstream >/dev/null; then
     git remote add "$UPSTREAM_REMOTE" "$UPSTREAM_REPO"
 fi
 
-LATEST_UPSTREAM_VERSION=$(git describe --tags --abbrev=0 "${UPSTREAM_REMOTE}/${UPSTREAM_BRANCH}")
-TARGET_TAG=${1:-$LATEST_UPSTREAM_VERSION}
+LAST_TAG=${1}
+TARGET_TAG=${2}
 
-echo "Rebasing on top of $TARGET_TAG ..."
+git fetch --tags "$UPSTREAM_REMOTE"
+git switch -c "${LOCAL_BRANCH_PREFIX}${TARGET_TAG}" "$TARGET_TAG"
+git cherry-pick "${LOCAL_BRANCH_PREFIX}${LAST_TAG}...${LAST_TAG}"
 
-git fetch --tags "$UPSTREAM_REMOTE" "$UPSTREAM_BRANCH"
-
-# Update upstream branch locally, for git diff comparison
-git branch -f "$UPSTREAM_BRANCH" "$TARGET_TAG"
-git push "$LOCAL_REMOTE" "$UPSTREAM_BRANCH"
-
-# Update local branch by rebasing modifications onto latest tag
-git checkout "$LOCAL_BRANCH"
-git pull origin "$LOCAL_BRANCH"
-git rebase -X theirs "$UPSTREAM_BRANCH" -i --autosquash
-
-git log --oneline "${TARGET_TAG}~..HEAD"
-
-echo "Press enter to push"
-read -r
-
-git push "$LOCAL_REMOTE" "$LOCAL_BRANCH" --force-with-lease
+echo "Ready to push $LOCAL_BRANCH_PREFIX${TARGET_TAG}"
